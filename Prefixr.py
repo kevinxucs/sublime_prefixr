@@ -1,7 +1,7 @@
 import sublime
 import sublime_plugin
-import urllib
-import urllib2
+import urllib.request, urllib.parse, urllib.error
+import urllib.request, urllib.error, urllib.parse
 import threading
 import re
 
@@ -152,16 +152,16 @@ class PrefixrApiCall(threading.Thread):
 
     def run(self):
         try:
-            data = urllib.urlencode({'css': self.original})
-            request = urllib2.Request('http://prefixr.com/api/index.php', data,
+            data = urllib.parse.urlencode({'css': self.original})
+            request = urllib.request.Request('http://prefixr.com/api/index.php', data,
                 headers={"User-Agent": "Sublime Prefixr"})
-            http_file = urllib2.urlopen(request, timeout=self.timeout)
+            http_file = urllib.request.urlopen(request, timeout=self.timeout)
             self.result = http_file.read()
             return
 
-        except (urllib2.HTTPError) as (e):
+        except urllib.error.HTTPError as e:
             err = '%s: HTTP error %s contacting API' % (__name__, str(e.code))
-        except (urllib2.URLError) as (e):
+        except urllib.error.URLError as e:
             err = '%s: URL error %s contacting API' % (__name__, str(e.reason))
 
         sublime.error_message(err)
