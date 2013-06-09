@@ -95,12 +95,12 @@ class PrefixrCommand(sublime_plugin.TextCommand):
             braces)
         # self.view.replace(edit, sel, prefix + main + suffix)
 
+        print("selb: " + str(sel.begin()))
+        print("sele: " + str(sel.end()))
+        print("offset: " + str(offset))
         print("Content from replace: " + prefix + main + suffix)
 
-        self.view.run_command('PrefixrWrite', {'selb': sel.begin(),
-                                               'sele': sel.end(),
-                                               'offset': offset,
-                                               'content': prefix + main + suffix})
+        self.view.run_command('PrefixrWrite', {'selb': sel.begin(), 'sele': sel.end(), 'offset': offset, 'content': prefix + main + suffix})
 
         # We add the end of the new text to the selection
         end_point = sel.begin() + len(prefix) + len(main)
