@@ -7,6 +7,7 @@ import re
 
 
 class PrefixrCommand(sublime_plugin.TextCommand):
+
     def run(self, edit):
         # We check for braces since we can do a better job of preserving
         # whitespace when braces are not present
@@ -40,7 +41,8 @@ class PrefixrCommand(sublime_plugin.TextCommand):
         self.view.sel().clear()
 
         # This creates an edit group so we can undo all changes in one go
-        edit = self.view.begin_edit('prefixr')
+        # Disable for Sublime Text 3
+        # edit = self.view.begin_edit('prefixr')
 
         self.handle_threads(edit, threads, braces)
 
@@ -143,6 +145,7 @@ class PrefixrCommand(sublime_plugin.TextCommand):
 
 
 class PrefixrApiCall(threading.Thread):
+
     def __init__(self, sel, string, timeout):
         self.sel = sel
         self.original = string
@@ -152,11 +155,11 @@ class PrefixrApiCall(threading.Thread):
 
     def run(self):
         try:
-            data = urllib.parse.urlencode({'css': self.original})
+            data = urllib.parse.urlencode({'css': self.original}).encode()
             request = urllib.request.Request('http://prefixr.com/api/index.php', data,
                 headers={"User-Agent": "Sublime Prefixr"})
             http_file = urllib.request.urlopen(request, timeout=self.timeout)
-            self.result = http_file.read()
+            self.result = http_file.read().decode()
             return
 
         except urllib.error.HTTPError as e:
