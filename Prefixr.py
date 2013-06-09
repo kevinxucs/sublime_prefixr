@@ -44,9 +44,9 @@ class PrefixrCommand(sublime_plugin.TextCommand):
         # Disable for Sublime Text 3
         # edit = self.view.begin_edit('prefixr')
 
-        self.handle_threads(edit, threads, braces)
+        self.handle_threads(threads, braces)
 
-    def handle_threads(self, edit, threads, braces, offset=0, i=0, dir=1):
+    def handle_threads(self, threads, braces, offset=0, i=0, dir=1):
         next_threads = []
         for thread in threads:
             if thread.is_alive():
@@ -54,7 +54,7 @@ class PrefixrCommand(sublime_plugin.TextCommand):
                 continue
             if thread.result == False:
                 continue
-            offset = self.replace(edit, thread, braces, offset)
+            offset = self.replace(thread, braces, offset)
         threads = next_threads
 
         if len(threads):
@@ -69,18 +69,18 @@ class PrefixrCommand(sublime_plugin.TextCommand):
             self.view.set_status('prefixr', 'Prefixr [%s=%s]' % \
                 (' ' * before, ' ' * after))
 
-            sublime.set_timeout(lambda: self.handle_threads(edit, threads,
+            sublime.set_timeout(lambda: self.handle_threads(threads,
                 braces, offset, i, dir), 100)
             return
 
-        self.view.end_edit(edit)
+        # self.view.end_edit(edit)
 
         self.view.erase_status('prefixr')
         selections = len(self.view.sel())
         sublime.status_message('Prefixr successfully run on %s selection%s' %
             (selections, '' if selections == 1 else 's'))
 
-    def replace(self, edit, thread, braces, offset):
+    def replace(self, thread, braces, offset):
         sel = thread.sel
         original = thread.original
         result = thread.result
@@ -93,7 +93,14 @@ class PrefixrCommand(sublime_plugin.TextCommand):
         result = self.normalize_line_endings(result)
         (prefix, main, suffix) = self.fix_whitespace(original, result, sel,
             braces)
-        self.view.replace(edit, sel, prefix + main + suffix)
+        # self.view.replace(edit, sel, prefix + main + suffix)
+
+        print("Content from replace: " + prefix + main + suffix)
+
+        self.view.run_command('PrefixrWrite', {'selb': sel.begin(),
+                                               'sele': sel.end(),
+                                               'offset': offset,
+                                               'content': prefix + main + suffix})
 
         # We add the end of the new text to the selection
         end_point = sel.begin() + len(prefix) + len(main)
@@ -142,6 +149,24 @@ class PrefixrCommand(sublime_plugin.TextCommand):
         suffix = match.groups()[0]
 
         return (prefix, prefixed, suffix)
+
+
+class PrefixrWriteCommand(sublime_plugin.TextCommand):
+
+    def run(self, edit, **kwargs):
+        selb = kwargs['selb']
+        sele = kwargs['sele']
+        offset = kwargs['offset']
+        content = kwargs['content']
+
+        if offset:
+            sel = sublime.Region(selb + offset, sele + offset)
+        else:
+            sel = sublime.Region(selb, sele)
+
+        print('Content from run: ' +  content)
+
+        self.view.replace(edit, sel, content)
 
 
 class PrefixrApiCall(threading.Thread):
